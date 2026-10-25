@@ -31,21 +31,24 @@ def launch():
 
 
 def downloader():
-    with open(INFO_PATH, "r") as f:
-        verloc = f.readline().strip()
-        dataloc = f.readline().strip()
-        nameapploc = f.readline().strip()
-    
-    # 1. Download latest version from GitHub
     url = "https://api.github.com/repos/TecnaGamer/BeamNG.Earth/releases/latest"
     response = requests.get(url)
     data = response.json()
     vergit = data["tag_name"]
     dategit = data["published_at"]
-    nameappgit = data["assets"][1]["name"]
-    appurl = data["assets"][1]["browser_download_url"]
+    
+    appurl = None
+    nameappgit = None
+    for asset in data["assets"]:
+        if asset["name"].endswith(".exe"): 
+            nameappgit = asset["name"]
+            appurl = asset["browser_download_url"]
+            break
+            
+    if not appurl and data["assets"]:
+        nameappgit = data["assets"][0]["name"]
+        appurl = data["assets"][0]["browser_download_url"]
 
-    # Chemin complet pour sauvegarder le fichier dans le même dossier que le .exe
     app_path = os.path.join(BASE_DIR, nameappgit)
 
     print(Fore.LIGHTYELLOW_EX + f"Downloading {nameappgit}...")
@@ -56,14 +59,8 @@ def downloader():
     # 2. Save info in the txt file
     with open(INFO_PATH, "w") as f:
         f.write(f"{vergit}\n{dategit}\n{nameappgit}")
-
-    # 3. Delete old version
-    if os.path.exists(os.path.join(BASE_DIR, nameapploc)):
-        os.remove(os.path.join(BASE_DIR, nameapploc))
-    else:
-        pass
     
-    # 4. Launch
+    # 3. Launch
     print(Fore.LIGHTGREEN_EX + "Update downloaded! \n")
     checkupdate()
 
